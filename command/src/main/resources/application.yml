@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: ${APP_NAME:cqrs-command}
+
+  # PostgreSQL 설정 (Write DB)
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:telecomdb}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  # JPA 설정
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: ${JPA_SHOW_SQL:true}
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# EventHub 설정 - 단일 EventHub로 통합
+event-hub:
+  connection-string: ${EVENT_HUB_CONNECTION_STRING}
+  hub-name: ${EVENT_HUB_NAME:telecom-events}
+
+azure:
+  storage:
+    connection-string: ${STORAGE_CONNECTION_STRING:UseDevelopmentStorage=true}
+    name: telecom-events
+
+# Swagger 설정
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /api-docs
+
+# 서버 포트 설정
+server:
+  port: ${SERVER_PORT:8080}
+
+logging:
+  level:
+    com.telecom: TRACE
+    org.hibernate.SQL: TRACE

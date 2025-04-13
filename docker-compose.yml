@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14
+    container_name: postgres-telecom
+    environment:
+      POSTGRES_DB: telecomdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:6
+    container_name: mongodb-telecom
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongodb
+      MONGO_INITDB_ROOT_PASSWORD: mongodb
+      MONGO_INITDB_DATABASE: telecomdb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/telecomdb --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  command-service:
+    build:
+      context: .
+      dockerfile: command/Dockerfile
+    container_name: telecom-command-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - APP_NAME=cqrs-command
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=telecomdb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - EVENT_HUB_CONNECTION_STRING=${EVENT_HUB_CONNECTION_STRING}
+      - EVENT_HUB_NAME=telecom-events
+      - STORAGE_CONNECTION_STRING=${STORAGE_CONNECTION_STRING}
+      - LOG_LEVEL=DEBUG
+    ports:
+      - "8080:8080"
+
+  query-service:
+    build:
+      context: .
+      dockerfile: query/Dockerfile
+    container_name: telecom-query-service
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      - APP_NAME=cqrs-query
+      - MONGODB_HOST=mongodb
+      - MONGODB_USER=mongodb
+      - MONGODB_PASSWORD=mongodb
+      - MONGODB_DB=telecomdb
+      - EVENT_HUB_CONNECTION_STRING=${EVENT_HUB_CONNECTION_STRING}
+      - EVENT_HUB_NAME=telecom-events
+      - EVENT_HUB_CONSUMER_GROUP=$Default
+      - STORAGE_CONNECTION_STRING=${STORAGE_CONNECTION_STRING}
+      - BLOB_CONTAINER=telecom-events-checkpoints
+      - LOG_LEVEL=DEBUG
+    ports:
+      - "8081:8081"
+
+volumes:
+  postgres-data:
+  mongo-data:
