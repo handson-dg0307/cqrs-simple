@@ -797,7 +797,7 @@ main() {
    setup_aks
 
    # ACR pull 권한 설정
-   setup_acr_permission
+   #setup_acr_permission
 
    # 리소스 생성 및 애플리케이션 배포
    build_application
